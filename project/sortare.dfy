@@ -1,7 +1,16 @@
-type Node = int
+type Node = nat
+
 class Graph {
+  var n : nat
+
+  predicate isValid()
+    reads this
+  {
+     (forall i :: 0 <= i < n ==> i in adj.Keys) &&
+    (forall i :: 0 <= i < n ==>(forall k :: k in adj[i] ==> 0 <= k < n))
+  }
   var adj: map<Node, seq<Node>>
-  
+
   constructor() {
     adj := map[]; 
   }
