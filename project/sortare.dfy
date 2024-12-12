@@ -1,39 +1,43 @@
-type Node = nat
 
-class Graph {
-  var n : nat
+datatype Graph<T> = Graph(V: set<T>, E: set<(T, T)>)
 
-  predicate isValid()
-    reads this
-  {
-     (forall i :: 0 <= i < n ==> i in adj.Keys) &&
-    (forall i :: 0 <= i < n ==>(forall k :: k in adj[i] ==> 0 <= k < n))
-  }
-  var adj: map<Node, seq<Node>>
+predicate isvalid<T>(G: Graph<T>) {
+  forall e :: e in G.E ==> e.0 in G.V && e.1 in G.V
+}
 
-  constructor() {
-    adj := map[]; 
-  }
+predicate acyclic<T>(G: Graph<T>) {
+  !exists v :: v in G.V && existsPath(G, v, v)
+}
 
-  method AddNode(n: Node)
-    requires n !in adj.Keys
-    ensures n in adj.Keys
-    modifies this
-  {
-    adj := adj[n := []];
-  }
-
-  method AddEdge(u: Node, v: Node)
-  requires u in adj.Keys && v in adj.Keys
-  ensures u in adj.Keys 
-  ensures v in adj[u] 
-  ensures adj[u] == old(adj[u]) + [v] 
-  modifies this
+predicate existsPath<T>(G: Graph<T>, u: T, v: T)
+  decreases G.E
 {
-  var oldNeighbors := adj[u];
-  adj := adj[u := oldNeighbors + [v]];
+  (u, v) in G.E ||
+  exists e :: e in G.E && e.0 == u &&
+              existsPath(Graph(G.V, G.E - {e}), e.1, v)
+}
+
+function  removeVertex<T>(v: T, G: Graph<T>): Graph<T> {
+  Graph(G.V - {v}, set e | e in G.E && e.0 != v && e.1 != v)
+}
+
+method AddNode<T>(v: T, G: Graph<T>) returns (newGraph: Graph<T>)
+  requires v !in G.V
+  ensures newGraph.V == G.V + {v}
+  ensures newGraph.E == G.E
+{
+  newGraph := Graph(G.V + {v}, G.E);
+}
+
+method AddEdge<T>(u: T, v: T, G: Graph<T>) returns (newGraph: Graph<T>)
+  requires u in G.V && v in G.V
+  requires (u, v) !in G.E
+  ensures newGraph.V == G.V
+  ensures newGraph.E == G.E + {(u, v)}
+{
+  newGraph := Graph(G.V, G.E + {(u, v)});
 }
 
 
 
-}
+
