@@ -1,7 +1,7 @@
 
 datatype Graph<T> = Graph(V: set<T>, E: set<(T, T)>)
 
-predicate isvalid<T>(G: Graph<T>) {
+predicate isValid<T>(G: Graph<T>) {
   forall e :: e in G.E ==> e.0 in G.V && e.1 in G.V
 }
 
@@ -39,5 +39,37 @@ method AddEdge<T>(u: T, v: T, G: Graph<T>) returns (newGraph: Graph<T>)
 }
 
 
+method getIncidenceDegree<T>(v: T, G: Graph<T>) returns (incidenceDegree: int)
+  requires isValid(G)
+  requires v in G.V 
+{
+  incidenceDegree := 0; 
+  var Ecopy := G.E;
+  while(Ecopy != {})
+  decreases Ecopy
+  {
+      var e :| e in Ecopy;
+      if (e.1 == v)
+      {
+        incidenceDegree := incidenceDegree + 1;
+      }
+      Ecopy := Ecopy - { e };
+  }
 
+}
+
+method getAllIncidenceDegrees<T>(G: Graph<T>) returns (degreeMap: map<T, int>)
+requires isValid(G)
+{
+  degreeMap := map[];
+  var Vcopy := G.V;
+  while( Vcopy != {})
+  decreases Vcopy
+  {
+    var v :| v in Vcopy;
+    var x := getIncidenceDegree(v, G);
+    degreeMap := degreeMap[v := x];
+    Vcopy := Vcopy - { v };
+  }
+}
 
