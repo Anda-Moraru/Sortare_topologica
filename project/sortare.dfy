@@ -41,30 +41,30 @@ method AddEdge<T>(u: T, v: T, G: Graph<T>) returns (newGraph: Graph<T>)
 
 method getIncidenceDegree<T>(v: T, G: Graph<T>) returns (incidenceDegree: int)
   requires isValid(G)
-  requires v in G.V 
+  requires v in G.V
 {
-  incidenceDegree := 0; 
+  incidenceDegree := 0;
   var Ecopy := G.E;
   while(Ecopy != {})
-  decreases Ecopy
+    decreases Ecopy
   {
-      var e :| e in Ecopy;
-      if (e.1 == v)
-      {
-        incidenceDegree := incidenceDegree + 1;
-      }
-      Ecopy := Ecopy - { e };
+    var e :| e in Ecopy;
+    if (e.1 == v)
+    {
+      incidenceDegree := incidenceDegree + 1;
+    }
+    Ecopy := Ecopy - { e };
   }
 
 }
 
 method getAllIncidenceDegrees<T>(G: Graph<T>) returns (degreeMap: map<T, int>)
-requires isValid(G)
+  requires isValid(G)
 {
   degreeMap := map[];
   var Vcopy := G.V;
   while( Vcopy != {})
-  decreases Vcopy
+    decreases Vcopy
   {
     var v :| v in Vcopy;
     var x := getIncidenceDegree(v, G);
@@ -73,3 +73,38 @@ requires isValid(G)
   }
 }
 
+
+
+method topsort<T>(G: Graph<T>) returns (s: seq<T>)
+  requires isValid(G) && acyclic(G)
+{
+  s := [];
+  var remaining_G := G;
+
+  while remaining_G.V != {}
+    invariant remaining_G == Graph( set v | v in G.V && v !in s,
+                                    set e | e in G.E && e.0 !in s && e.1 !in s)
+    invariant multiset(s) == multiset(G.V - remaining_G.V)
+    invariant forall i, j :: 0 <= i <= j < |s| ==> (s[j], s[i]) !in G.E
+    decreases remaining_G.V
+  {
+
+    var remaining_G_V := remaining_G.V;
+    var v :| v in remaining_G.V;
+    var x := getIncidenceDegree(v, remaining_G);
+
+    while (remaining_G_V != {} && x != 0)
+      decreases remaining_G_V
+    {
+      remaining_G_V := remaining_G_V - {v};
+      var v :| v in remaining_G.V;
+      var x := getIncidenceDegree(v, remaining_G);
+
+    }
+
+    var test1 := getIncidenceDegree(v, remaining_G);
+    assert test1 == 0;
+    s := s + [v];
+    remaining_G := removeVertex(v, remaining_G);
+  }
+}
